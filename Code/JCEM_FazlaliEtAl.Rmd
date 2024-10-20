@@ -1,0 +1,371 @@
+---
+title: "Sex and seasonal effect on human physiology"
+author: "Fatemeh (Mahsa) Fazlali"
+date: "2024-01-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Set options for knitting the document
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+#Clean Environment
+```{r, include=FALSE}
+# Clear the environment to avoid any leftover variables or data from previous sessions.
+rm(list=ls()) 
+
+# Close any open graphic devices to prevent issues with plotting.
+graphics.off()  
+
+```
+
+#Install and Load Required Packages
+```{r}
+# Install 'pacman', a package manager that helps manage other R packages.
+if (!require("pacman")) install.packages("pacman")
+
+# Load necessary libraries for the analysis, including packages for visualization, and statistical analysis.
+pacman::p_load(
+  # Visualization packages
+  ggplot2, dplyr, tidyverse, pROC, cowplot, ggpubr, ggridges, ggdist, zoo,
+  
+  # Statistical analysis packages
+  lme4, emmeans, lmerTest, effectsize, MuMIn, sjstats, performance
+)
+```
+
+# Import the datasets
+```{r}
+# Import the melatonin and subjective alertness (KSS) data.
+# Make sure the file paths are correct and use relative paths if possible for portability.
+#Mel_KSS_TP<- 
+#  read.csv("C:/PHDPoject/ConesStudy/PhD publications/JCEM/Data/Melatonin_KSS_TimePoint.csv")
+
+# Import AUC (Area Under the Curve), DLMO and average KSS data.
+AUC<- 
+  read.csv("C:/PHDPoject/ConesStudy/PhD publications/JCEM/Data/AUC.csv")
+
+DLMO<- 
+  read.csv("C:/PHDPoject/ConesStudy/PhD publications/JCEM/Data/DLMO.csv")
+
+KSS<- 
+  read.csv("C:/PHDPoject/ConesStudy/PhD publications/JCEM/Data/Ave_KSS.csv")
+
+```
+
+
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------StatisticalAnalysis-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+###all participants###
+#AUC
+```{r}
+# Fit a linear mixed-effects model for AUC with light conditions as a fixed effect and prior light history (D0_TAT100) as a covariance,
+# including random intercepts for participants (id).
+model_lmm <- lmer(AUC ~ Condition + D0_TAT100 + (1 | id) , data = AUC)
+summary(model_lmm) # Summarize the model to view the coefficients, significance, etc.
+
+# Perform an ANOVA III on the model to examine the effect of the predictors.
+anova_result <- anova(model_lmm) 
+print(anova_result)
+
+# Post-hoc pairwise comparisons between conditions with Tukey's adjustment for multiple comparisons.
+emmeans(model_lmm, list (pairwise ~ Condition), adjust = "tukey") 
+
+# Calculate partial omega squared effect size to assess the magnitude of the effects.
+omega_squared <- effectsize::omega_squared(model_lmm) 
+print(omega_squared)
+```
+
+#AVE_KSS 
+```{r}
+# Fit a linear mixed-effects model for average KSS ratings with light conditions as a fixed effect and prior light history (D0_TAT100) as a covariance,
+# including random intercepts for participants (id).
+model_lmm <- lmer(Ave_KSS ~ Condition + D0_TAT100 + (1 | id) , data = KSS)
+summary(model_lmm)# Summarize the model.
+
+#Perform ANOVA and display the results.
+anova_result <- anova(model_lmm) 
+print(anova_result)
+
+# Post-hoc comparisons and effect size calculations (as before).
+emmeans(model_lmm, list (pairwise ~ Condition), adjust = "tukey")
+omega_squared <- effectsize::omega_squared(model_lmm)
+print(omega_squared)
+```
+
+#DLMO
+```{r}
+# Fit a linear model for DLMO based on D0_TAT100 baseline variable.
+modelDLMO_lmm <- lm(DLMO ~ D0_TAT100 , data = DLMO)
+summary(modelDLMO_lmm) # Summarize the model.
+
+# Perform ANOVA to examine the predictor significance.
+anova_resultDLMO <- anova(modelDLMO_lmm)
+print(anova_resultDLMO)
+
+# effect size calculations for the DLMO model.
+omega_squared <- effectsize::omega_squared(modelDLMO_lmm)
+print(omega_squared)
+```
+
+
+-------------------------------------------------------------------------------------------------------------
+###Sex effect###
+#AUC
+```{r}
+# Fit a linear mixed-effects model (LMM) for AUC with interaction between light Condition and Sex.
+# D0_TAT100 is included as a baseline covariate, and random intercepts are modeled for participants (id).
+model_lmm <- lmer(AUC ~ Condition * Sex + D0_TAT100 + (1 | id), data = AUC)
+
+# Summarize the model to view estimated coefficients, significance levels, and more.
+summary(model_lmm)
+
+# Perform an ANOVA to test the significance of the light Condition , Sex, and their interaction.
+anova_result <- anova(model_lmm)
+print(anova_result)
+
+# Conduct post-hoc pairwise comparisons between light Condition , adjusted using Tukey's method.
+emmeans(model_lmm, list(pairwise ~ Condition), adjust = "tukey")
+
+# Calculate partial omega squared effect size to assess the strength of the effects.
+omega_squared <- effectsize::omega_squared(model_lmm)
+print(omega_squared)
+
+```
+
+#AVE_KSS 
+```{r}
+# Fit a linear mixed-effects model (LMM) for average KSS, with interaction between light Condition  and Sex.
+# D0_TAT100 is included as a baseline covariate, and random intercepts are modeled for participants (id).
+model_lmm <- lmer(Ave_KSS ~ Condition * Sex + D0_TAT100 + (1 | id), data = KSS)
+
+# Summarize the model to display coefficients and their significance.
+summary(model_lmm)
+
+# Perform an ANOVA to test the significance of light Condition , Sex, and their interaction.
+anova_result <- anova(model_lmm)
+print(anova_result)
+
+# Post-hoc pairwise comparisons between light Condition  using Tukey's adjustment.
+emmeans(model_lmm, list(pairwise ~ Condition), adjust = "tukey")
+
+# Calculate partial omega squared to assess the effect size of the predictors.
+omega_squared <- effectsize::omega_squared(model_lmm)
+print(omega_squared)
+
+```
+
+#DLMO
+```{r}
+# Fit a linear model for DLMO with Sex as a predictor, controlling for D0_TAT100 as a covariate.
+modelDLMO_lmm <- lm(DLMO ~ Sex + D0_TAT100, data = DLMO)
+
+# Summarize the model to show estimated coefficients, standard errors, and p-values.
+summary(modelDLMO_lmm)
+
+# Perform an ANOVA to test the significance of Sex on DLMO.
+anova_resultDLMO <- anova(modelDLMO_lmm)
+print(anova_resultDLMO)
+
+# Calculate partial omega squared to quantify the effect size of Sex on DLMO.
+omega_squared <- effectsize::omega_squared(modelDLMO_lmm)
+print(omega_squared)
+
+```
+
+
+#--->Females<---#
+#AUC#
+```{r}
+# Subset the data to include only female participants.
+AUC_F <- subset(AUC, Sex == "Female")
+
+# Fit a linear mixed-effects model (LMM) for AUC in female participants, with light Condition  as a predictor.
+# D0_TAT100 and MePh are included as covariates, and random intercepts are modeled for participants (id).
+modelF_lmm <- lmer(AUC ~ Condition + D0_TAT100 + MePh + (1 | id), data = AUC_F)
+
+# Summarize the model to view the estimated coefficients and their significance.
+summary(modelF_lmm)
+
+# Perform an ANOVA to test the significance of the predictors in female participants.
+anova_resultF <- anova(modelF_lmm)
+print(anova_resultF)
+
+# Conduct post-hoc pairwise comparisons between Conditions, adjusted with Tukey's method.
+emmeans(modelF_lmm, list(pairwise ~ Condition), adjust = "tukey")
+
+# Calculate partial omega squared to assess the effect size of the predictors in this subset.
+omegaF_squared <- effectsize::omega_squared(modelF_lmm)
+print(omegaF_squared)
+
+```
+
+#DLMO
+```{r}
+# Subset the data to include only female participants.
+DLMO_F <- subset(DLMO, Sex == "Female")
+
+# Fit a linear model for DLMO in female participants, using D0_TAT100 and MePh as predictors.
+modelDLMOSEX_lmm <- lm(DLMO ~ D0_TAT100 + MePh, data = DLMO_F)
+
+# Summarize the model to display the coefficients, standard errors, and p-values.
+summary(modelDLMOSEX_lmm)
+
+# Perform an ANOVA to test the significance of D0_TAT100 and MePh in female participants.
+anova_resultDLMOSEX <- anova(modelDLMOSEX_lmm)
+print(anova_resultDLMOSEX)
+
+# Calculate partial omega squared to assess the effect size of the predictors in this subset.
+omegaDLMOSEX_squared <- effectsize::omega_squared(modelDLMOSEX_lmm)
+print(omegaDLMOSEX_squared)
+
+```
+
+
+-------------------------------------------------------------------------------------------------------------
+###Seasonal effect###
+#AUC
+```{r}
+# Fit a linear mixed-effects model for AUC with interaction between light Condition and Season.
+# D0_TAT100 is included as a baseline covariate, and random intercepts are modeled for participants (id).
+model_lmm <- lmer(AUC ~ Condition * Season + D0_TAT100 + (1 | id), data = AUC)
+
+# Summarize the model to view estimated coefficients and their significance.
+summary(model_lmm)
+
+# Perform an ANOVA to test the significance of the Condition, Season, and their interaction.
+anova_result <- anova(model_lmm) 
+print(anova_result)
+
+# Conduct post-hoc pairwise comparisons between light Conditions with Tukey's adjustment.
+emmeans(model_lmm, list(pairwise ~ Condition), adjust = "tukey")
+
+# Calculate partial omega squared effect size to assess the magnitude of the observed effects.
+omega_squared <- effectsize::omega_squared(model_lmm)
+print(omega_squared)
+
+```
+
+#AVE_KSS 
+```{r}
+# Fit a linear mixed-effects model for AVE_KSS with interaction between light Condition and Season.
+# D0_TAT100 is included as a baseline covariate, and random intercepts are modeled for participants (id).
+model_lmm <- lmer(Ave_KSS ~ Condition * Season + D0_TAT100 + (1 | id), data = KSS)
+
+# Summarize the model to display coefficients, standard errors, and p-values.
+summary(model_lmm)
+
+# Perform ANOVA to test the significance of the predictors and their interaction.
+anova_result <- anova(model_lmm) 
+print(anova_result)
+
+# Conduct post-hoc pairwise comparisons between light Conditions, adjusted using Tukey's method.
+emmeans(model_lmm, list(pairwise ~ Condition), adjust = "tukey")
+
+# Calculate partial omega squared effect size to quantify the strength of the effects.
+omega_squared <- effectsize::omega_squared(model_lmm)
+print(omega_squared)
+
+```
+
+#DLMO
+```{r}
+# Fit a linear model for DLMO using Season as the predictor, with D0_TAT100 as a baseline covariate.
+modelDLMO_lmm <- lm(DLMO ~ Season + D0_TAT100, data = DLMO)
+
+# Summarize the model to show estimated coefficients and their significance.
+summary(modelDLMO_lmm)
+
+# Perform an ANOVA to test the significance of the Season effect on DLMO.
+anova_resultDLMO <- anova(modelDLMO_lmm)
+print(anova_resultDLMO)
+
+# Calculate partial omega squared to assess the effect size of Season on DLMO.
+omega_squared <- effectsize::omega_squared(modelDLMO_lmm)
+print(omega_squared)
+```
+
+
+-------------------------------------------------------------------------------------------------------------
+###Sex & Seasonal effect###
+#AUC
+```{r}
+# Fit a linear mixed-effects model for AUC with interactions between light condition, Sex, and Season.
+# D0_TAT100 is included as a baseline covariate, and random intercepts are included for participants (id).
+model_lmm <- lmer(AUC ~ Condition * Sex * Season + D0_TAT100  + (1 | id) , data = AUC)
+summary(model_lmm) # Summarize the model to display the estimated coefficients and their significance.
+
+# Perform an ANOVA to test the significance of the predictors and their interactions.
+anova_result <- anova(model_lmm) 
+print(anova_result)
+
+# Post-hoc pairwise comparisons between conditions using Tukey's method for multiple comparisons.
+emmeans(model_lmm, list (pairwise ~ Condition), adjust = "tukey")#post hoc
+
+# Calculate partial omega squared effect size to evaluate the magnitude of the observed effects.
+omega_squared <- effectsize::omega_squared(model_lmm)# Calculate partial omega squared effect size
+print(omega_squared)
+```
+
+#AVE_KSS 
+```{r}
+# Fit a linear mixed-effects model for AVE_KSS with interactions between light condition, Sex, and Season.
+# D0_TAT100 is included as a covariate, and random intercepts are modeled for participants (id).
+model_lmm <- lmer(Ave_KSS ~ Condition * Sex * Season + D0_TAT100  + (1 | id) , data = KSS)
+summary(model_lmm) # Summarize the model to display coefficients, standard errors, and significance levels.
+
+# Perform an ANOVA to test the significance of the effects.
+anova_result <- anova(model_lmm) 
+print(anova_result)
+
+# Perform post-hoc comparisons between conditions with Tukey's adjustment.
+emmeans(model_lmm, list (pairwise ~ Condition), adjust = "tukey")
+
+# Calculate partial omega squared to assess the effect size of the model terms.
+omega_squared <- effectsize::omega_squared(model_lmm)
+print(omega_squared)
+```
+
+#DLMO
+```{r}
+# Fit a linear model for DLMO, with Sex and Season as predictors and D0_TAT100 as a baseline covariate.
+modelDLMO_lmm <- lm(DLMO ~ Sex + Season + D0_TAT100 , data = DLMO)
+summary(modelDLMO_lmm)# Summarize the model to show coefficients, significance, and other statistics.
+
+# Perform an ANOVA to test the main effects of Sex and Season on DLMO.
+anova_resultDLMO <- anova(modelDLMO_lmm)
+print(anova_resultDLMO)
+
+# Calculate partial omega squared to quantify the effect size of the predictors.
+omega_squared <- effectsize::omega_squared(modelDLMO_lmm)
+print(omega_squared)
+```
+
+
+#DLMO
+```{r}
+# Subset the data for female participants.
+DLMO_F <- subset(DLMO, Sex == "Female")
+
+# Further subset the data for female participants during the summer season.
+DLMO_FS<- subset(DLMO_F, Season == "Summer")
+
+# Fit a linear model for DLMO in female participants during summer, with D0_TAT100 and MePh as predictors.
+modelDLMOSEX_lmm <- lm(DLMO ~ D0_TAT100 + MePh, data = DLMO_FS)
+
+# Summarize the model to show the estimated coefficients and their statistical significance.
+summary(modelDLMOSEX_lmm)
+
+# Perform an ANOVA to test the significance of the predictors in this subset.
+anova_resultDLMOSEX <- anova(modelDLMOSEX_lmm)
+print(anova_resultDLMOSEX)
+
+# Calculate partial omega squared to evaluate the effect size of the predictors.
+omegaDLMOSEX_squared <- effectsize::omega_squared(modelDLMOSEX_lmm)
+print(omegaDLMOSEX_squared)
+```
