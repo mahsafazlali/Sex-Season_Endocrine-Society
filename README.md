@@ -1,4 +1,4 @@
-# Sex-Season_JCEM
+# Sex-Season_Journal of the Endocrine Society
 Code and data for Fazlali et al., 2024, JCEM.
 
 ## Description and Licensing
